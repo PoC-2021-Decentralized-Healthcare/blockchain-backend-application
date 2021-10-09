@@ -21,12 +21,9 @@ const org2UserId = 'doctorUser';
 
 const gateway = new Gateway();
 
-
 function prettyJSONString(inputString) {
 	return JSON.stringify(JSON.parse(inputString), null, 2);
 }
-
-
 
 
 const enrolllUser = async (req, res) => {
@@ -94,8 +91,19 @@ try {
     // Get the contract from the network.
     const contract = network.getContract(chaincodeName);
 
+
+    const asset = {
+        ID: 'asset1',
+        Color: 'blue',
+        Size: 5,
+        Owner: 'Tomoko',
+        AppraisedValue: 350,
+    }
+    
     console.log('\n--> Submit Transaction: UpdateAsset asset1, change the appraisedValue to 350');
-    await contract.submitTransaction('UpdateAsset', 'asset1', 'blue', '5', 'Tomoko', '350');
+    await contract.submitTransaction('UpdateAssetV2', asset);
+    //await contract.submitTransaction('UpdateAsset', 'asset1', 'blue', '5', 'Tomoko', '350');
+
     console.log('*** Result: committed');
 
     console.log('\n--> Evaluate Transaction: ReadAsset, function returns "asset1" attributes');
@@ -228,7 +236,9 @@ try {
         // build an in memory object with the network configuration (also known as a connection profile)
         const ccp = buildCCPOrg1();
 
+        console.log(req.params)
 
+        
         // setup the wallet to hold the credentials of the application user
         const wallet = await buildWallet(Wallets, walletPath);
         
@@ -257,7 +267,22 @@ try {
         // This will be sent to both peers and if both peers endorse the transaction, the endorsed proposal will be sent
         // to the orderer to be committed by each of the peer's to the channel ledger.
         console.log('\n--> Submit Transaction: CreateAsset, creates new asset with ID, color, owner, size, and appraisedValue arguments');
-        let result = await contract.submitTransaction('CreateAsset', 'asset-' + uuid.v4(), 'yellow', '5', 'Tom', '1300', 'aasasa');
+
+
+        let id = uuid.v4()
+        const asset = {
+                ID: id,
+                Color: 'blue',
+                Size: 5,
+                Owner: 'Tomoko',
+                AppraisedValue: 300,
+            }
+        
+        var assetStr = Buffer.from(JSON.stringify(asset)).toString("base64");
+        //var assetObj = JSON.parse(Buffer.from(strAsset, 'base64').toString('ascii'))
+        
+        let result = await contract.submitTransaction('CreateAssetV2', id, assetStr);
+        //let result = await contract.submitTransaction('CreateAsset', 'asset-' + uuid.v4(), 'yellow', '5', 'Tom', '1300');
         console.log('*** Result: committed');
         if (`${result}` !== '') {
             console.log(`*** Result: ${prettyJSONString(result.toString())}`);

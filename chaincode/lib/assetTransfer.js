@@ -70,11 +70,30 @@ class AssetTransfer extends Contract {
     }
 
     // CreateAsset issues a new asset to the world state with given details.
+    async CreateAssetV2(ctx, id, base64Asset) {
+        const exists = await this.AssetExists(ctx, id);
+        if (exists) {
+            throw new Error(`The asset ${id} already exists`);
+        }
+
+        const asset = {
+            ID: id,
+            asset: base64Asset
+        };
+
+        //we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
+        await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(asset))));
+        return JSON.stringify(asset);
+    }    
+
+
+    // CreateAsset issues a new asset to the world state with given details.
     async CreateAsset(ctx, id, color, size, owner, appraisedValue) {
         const exists = await this.AssetExists(ctx, id);
         if (exists) {
             throw new Error(`The asset ${id} already exists`);
         }
+
 
         const asset = {
             ID: id,
@@ -88,6 +107,8 @@ class AssetTransfer extends Contract {
         return JSON.stringify(asset);
     }
 
+
+
     // ReadAsset returns the asset stored in the world state with given id.
     async ReadAsset(ctx, id) {
         const assetJSON = await ctx.stub.getState(id); // get the asset from chaincode state
@@ -97,6 +118,25 @@ class AssetTransfer extends Contract {
         return assetJSON.toString();
     }
 
+
+
+    // UpdateAsset updates an existing asset in the world state with provided parameters.
+    async UpdateAssetV2(ctx, id, base64Asset) {
+        const exists = await this.AssetExists(ctx, id);
+        if (!exists) {
+            throw new Error(`The asset ${id} does not exist`);
+        }
+
+        const updatedAsset = {
+            ID: id,
+            asset: base64Asset
+        };        
+
+        // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
+        return ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedAsset))));
+    }
+    
+    
     // UpdateAsset updates an existing asset in the world state with provided parameters.
     async UpdateAsset(ctx, id, color, size, owner, appraisedValue) {
         const exists = await this.AssetExists(ctx, id);

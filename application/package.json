@@ -16,7 +16,9 @@
         "express": "^4.17.1",
         "fabric-ca-client": "^2.2.4",
         "fabric-network": "^2.2.4",
+        "json-stringify-deterministic": "^1.0.1",
         "multer": "^1.4.3",
+        "sort-keys-recursive": "^2.1.1",
         "uuid": "^8.3.2"
     }
 }
