@@ -22,7 +22,7 @@ const org2UserId = 'doctorUser';
 const gateway = new Gateway();
 
 function prettyJSONString(inputString) {
-	return JSON.stringify(JSON.parse(inputString), null, 2);
+    return JSON.stringify(JSON.parse(inputString), null, 2);
 }
 
 
@@ -39,7 +39,7 @@ const enrolllUser = async (req, res) => {
         // setup the wallet to hold the credentials of the application user
         const wallet = await buildWallet(Wallets, walletPath);
 
-    // in a real application this would be done on an administrative flow, and only once
+        // in a real application this would be done on an administrative flow, and only once
         await enrollAdmin(caClient, wallet, mspOrg1);
 
         // in a real application this would be done only when a new user was required to be added
@@ -47,23 +47,23 @@ const enrolllUser = async (req, res) => {
         await registerAndEnrollUser(caClient, wallet, mspOrg1, org1UserId, 'org1.department1');
 
         await registerAndEnrollUser(caClient, wallet, mspOrg1, org2UserId, 'org1.department1');
-        
-        
+
+
         res.status(200).send("User registered and enrolled");
 
     } catch (err) {
 
-      console.log(err);
-  
-      res.status(500).send({
-        message: "Unable to register and enroll user!",
-      });
+        console.log(err);
+
+        res.status(500).send({
+            message: "Unable to register and enroll user!",
+        });
 
     }
-  };
+};
 
 
-  const transferAsset = async (req, res) => {
+const transferAsset = async (req, res) => {
 
 
 
@@ -73,71 +73,74 @@ const enrolllUser = async (req, res) => {
 
     // setup the wallet to hold the credentials of the application user
     const wallet = await buildWallet(Wallets, walletPath);
-    
-try {
-    // setup the gateway instance
-    // The user will now be able to create connections to the fabric network and be able to
-    // submit transactions and query. All transactions submitted by this gateway will be
-    // signed by this user using the credentials stored in the wallet.
-    await gateway.connect(ccp, {
-        wallet,
-        identity: org1UserId,
-        discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
-    });
 
-    // Build a network instance based on the channel where the smart contract is deployed
-    const network = await gateway.getNetwork(channelName);
+    try {
+        // setup the gateway instance
+        // The user will now be able to create connections to the fabric network and be able to
+        // submit transactions and query. All transactions submitted by this gateway will be
+        // signed by this user using the credentials stored in the wallet.
+        await gateway.connect(ccp, {
+            wallet,
+            identity: org1UserId,
+            discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
+        });
 
-    // Get the contract from the network.
-    const contract = network.getContract(chaincodeName);
+        // Build a network instance based on the channel where the smart contract is deployed
+        const network = await gateway.getNetwork(channelName);
+
+        // Get the contract from the network.
+        const contract = network.getContract(chaincodeName);
 
 
-    const asset = {
-        ID: 'asset1',
-        Color: 'blue',
-        Size: 5,
-        Owner: 'Tomoko',
-        AppraisedValue: 350,
+        const asset = {
+            ID: 'asset1',
+            Color: 'blue',
+            Size: 5,
+            Owner: 'Tomoko',
+            AppraisedValue: 350,
+        }
+
+        console.log('\n--> Submit Transaction: UpdateAsset asset1, change the appraisedValue to 350');
+        await contract.submitTransaction('UpdateAssetV2', asset);
+        //await contract.submitTransaction('UpdateAsset', 'asset1', 'blue', '5', 'Tomoko', '350');
+
+        console.log('*** Result: committed');
+
+        console.log('\n--> Evaluate Transaction: ReadAsset, function returns "asset1" attributes');
+        let result = await contract.evaluateTransaction('ReadAsset', 'asset1');
+        console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+        res.status(200).send(prettyJSONString(result.toString()));
+
+    } catch (err) {
+
+        console.log(err);
+
+        res.status(500).send({
+            message: "Unable to GetAllAssets!",
+        });
+
+    } finally {
+        // Disconnect from the gateway when the application is closing
+        // This will close all connections to the network
+        gateway.disconnect();
     }
-    
-    console.log('\n--> Submit Transaction: UpdateAsset asset1, change the appraisedValue to 350');
-    await contract.submitTransaction('UpdateAssetV2', asset);
-    //await contract.submitTransaction('UpdateAsset', 'asset1', 'blue', '5', 'Tomoko', '350');
-
-    console.log('*** Result: committed');
-
-    console.log('\n--> Evaluate Transaction: ReadAsset, function returns "asset1" attributes');
-    let result = await contract.evaluateTransaction('ReadAsset', 'asset1');
-    console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-    res.status(200).send(prettyJSONString(result.toString()));
-
-}  catch (err) {
-
-    console.log(err);
-
-    res.status(500).send({
-      message: "Unable to GetAllAssets!",
-    });
-
-}  finally {
-    // Disconnect from the gateway when the application is closing
-    // This will close all connections to the network
-    gateway.disconnect();
-}
 };
 
-  const getAllAssets = async (req, res) => {
 
 
 
-        // build an in memory object with the network configuration (also known as a connection profile)
-        const ccp = buildCCPOrg1();
+const getAllAssets = async (req, res) => {
 
 
-        // setup the wallet to hold the credentials of the application user
-        const wallet = await buildWallet(Wallets, walletPath);
-        
+
+    // build an in memory object with the network configuration (also known as a connection profile)
+    const ccp = buildCCPOrg1();
+
+
+    // setup the wallet to hold the credentials of the application user
+    const wallet = await buildWallet(Wallets, walletPath);
+
     try {
         // setup the gateway instance
         // The user will now be able to create connections to the fabric network and be able to
@@ -163,24 +166,24 @@ try {
 
         res.status(200).send(prettyJSONString(result.toString()));
 
-    }  catch (err) {
+    } catch (err) {
 
         console.log(err);
-    
+
         res.status(500).send({
-          message: "Unable to GetAllAssets!",
+            message: "Unable to GetAllAssets!",
         });
-  
-    }  finally {
+
+    } finally {
         // Disconnect from the gateway when the application is closing
         // This will close all connections to the network
         gateway.disconnect();
     }
-  };
+};
 
 
 
-  const getAsset = async (req, res) => {
+const getAsset = async (req, res) => {
 
 
     console.log(req.params)
@@ -191,57 +194,132 @@ try {
 
     // setup the wallet to hold the credentials of the application user
     const wallet = await buildWallet(Wallets, walletPath);
-    
-try {
-    // setup the gateway instance
-    // The user will now be able to create connections to the fabric network and be able to
-    // submit transactions and query. All transactions submitted by this gateway will be
-    // signed by this user using the credentials stored in the wallet.
-    await gateway.connect(ccp, {
-        wallet,
-        identity: org1UserId,
-        discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
-    });
 
-    // Build a network instance based on the channel where the smart contract is deployed
-    const network = await gateway.getNetwork(channelName);
+    try {
+        // setup the gateway instance
+        // The user will now be able to create connections to the fabric network and be able to
+        // submit transactions and query. All transactions submitted by this gateway will be
+        // signed by this user using the credentials stored in the wallet.
+        await gateway.connect(ccp, {
+            wallet,
+            identity: org1UserId,
+            discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
+        });
 
-    // Get the contract from the network.
-    const contract = network.getContract(chaincodeName);
+        // Build a network instance based on the channel where the smart contract is deployed
+        const network = await gateway.getNetwork(channelName);
 
-    console.log('\n--> Evaluate Transaction: ReadAsset, function returns "asset1" attributes');
-    let result = await contract.evaluateTransaction('ReadAsset', req.params.assetId);
-    console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+        // Get the contract from the network.
+        const contract = network.getContract(chaincodeName);
 
-    res.status(200).send(prettyJSONString(result.toString()));
+        console.log('\n--> Evaluate Transaction: ReadAsset, function returns "asset1" attributes');
+        let result = await contract.evaluateTransaction('ReadAsset', req.params.assetId);
+        console.log(`*** Result: ${prettyJSONString(result.toString())}`);
 
-}  catch (err) {
+        res.status(200).send(prettyJSONString(result.toString()));
 
-    console.log(err);
+    } catch (err) {
 
-    res.status(500).send({});
+        console.log(err);
 
-}  finally {
-    // Disconnect from the gateway when the application is closing
-    // This will close all connections to the network
-    gateway.disconnect();
-}
+        res.status(500).send({});
+
+    } finally {
+        // Disconnect from the gateway when the application is closing
+        // This will close all connections to the network
+        gateway.disconnect();
+    }
 };
 
 
 
 
-  const createAsset = async (req, res) => {
+const shareAsset = async (req, res) => {
 
-        // build an in memory object with the network configuration (also known as a connection profile)
-        const ccp = buildCCPOrg1();
+    // build an in memory object with the network configuration (also known as a connection profile)
+    const ccp = buildCCPOrg1();
 
-        console.log(req.params)
 
-        
-        // setup the wallet to hold the credentials of the application user
-        const wallet = await buildWallet(Wallets, walletPath);
-        
+    // setup the wallet to hold the credentials of the application user
+    const wallet = await buildWallet(Wallets, walletPath);
+
+    try {
+        // setup the gateway instance
+        // The user will now be able to create connections to the fabric network and be able to
+        // submit transactions and query. All transactions submitted by this gateway will be
+        // signed by this user using the credentials stored in the wallet.
+        await gateway.connect(ccp, {
+            wallet,
+            identity: org1UserId,
+            discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
+        });
+
+        // Build a network instance based on the channel where the smart contract is deployed
+        const network = await gateway.getNetwork(channelName);
+
+        // Get the contract from the network.
+        const contract = network.getContract(chaincodeName);
+
+        /*
+        const asset = {
+            ID: 'asset1',
+            Color: 'blue',
+            Size: 5,
+            Owner: 'Tomoko',
+            AppraisedValue: 350,
+        }
+        */
+       
+        let id = req.body.id
+        let newOwner = req.body.newOwner
+
+
+        console.log('\n--> Get Asset: ', id);
+        let result = await contract.evaluateTransaction('ReadAsset', id);
+        console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+        let resultObj = JSON.parse(result.toString())
+
+
+        console.log('\n--> Submit Transaction: UpdateAsset {id}, change the appraisedValue to 350');
+        await contract.submitTransaction('UpdateAssetV2', id, newOwner, resultObj.base64_asset);
+
+        //await contract.submitTransaction('UpdateAsset', 'asset1', 'blue', '5', 'Tomoko', '350');
+
+        console.log('*** Result: committed');
+
+        console.log('\n--> Evaluate Transaction: ReadAsset, function returns "asset1" attributes');
+        result = await contract.evaluateTransaction('ReadAsset', id);
+        console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+        res.status(200).send(prettyJSONString(result.toString()));
+
+    } catch (err) {
+
+        console.log(err);
+
+        res.status(500).send({
+            message: "Unable to shareAsset!",
+        });
+
+    } finally {
+        // Disconnect from the gateway when the application is closing
+        // This will close all connections to the network
+        gateway.disconnect();
+    }
+};
+
+
+const createAsset = async (req, res) => {
+
+    // build an in memory object with the network configuration (also known as a connection profile)
+    const ccp = buildCCPOrg1();
+
+    
+
+    // setup the wallet to hold the credentials of the application user
+    const wallet = await buildWallet(Wallets, walletPath);
+
     try {
         // setup the gateway instance
         // The user will now be able to create connections to the fabric network and be able to
@@ -268,20 +346,25 @@ try {
         // to the orderer to be committed by each of the peer's to the channel ledger.
         console.log('\n--> Submit Transaction: CreateAsset, creates new asset with ID, color, owner, size, and appraisedValue arguments');
 
-
+        /*
         let id = uuid.v4()
+
         const asset = {
-                ID: id,
-                Color: 'blue',
-                Size: 5,
-                Owner: 'Tomoko',
-                AppraisedValue: 300,
-            }
-        
-        var assetStr = Buffer.from(JSON.stringify(asset)).toString("base64");
+            ID: id,
+            Color: 'blue',
+            Size: 5,
+            Owner: 'Tomoko',
+            AppraisedValue: 300,
+        }
+        */
+
+        console.log(req.body.id, req.body.base64_asset)
+
+        //var base64_asset = Buffer.from(JSON.stringify(asset)).toString("base64");
+        //var owner = 'Tomoko';
         //var assetObj = JSON.parse(Buffer.from(strAsset, 'base64').toString('ascii'))
-        
-        let result = await contract.submitTransaction('CreateAssetV2', id, assetStr);
+
+        let result = await contract.submitTransaction('CreateAssetV2', req.body.id, req.body.owner, req.body.base64_asset);
         //let result = await contract.submitTransaction('CreateAsset', 'asset-' + uuid.v4(), 'yellow', '5', 'Tom', '1300');
         console.log('*** Result: committed');
         if (`${result}` !== '') {
@@ -290,20 +373,20 @@ try {
 
         res.status(200).send(prettyJSONString(result.toString()));
 
-    }  catch (err) {
+    } catch (err) {
 
         console.log(err);
 
         res.status(500).send({
-        message: "Unable to create Asset!",
+            message: "Unable to create Asset!",
         });
 
-    }  finally {
+    } finally {
         // Disconnect from the gateway when the application is closing
         // This will close all connections to the network
         gateway.disconnect();
     }
-    };
+};
 
 
 module.exports = {
@@ -311,5 +394,6 @@ module.exports = {
     getAllAssets,
     getAsset,
     createAsset,
-    transferAsset
+    transferAsset,
+    shareAsset
 };

@@ -70,7 +70,7 @@ class AssetTransfer extends Contract {
     }
 
     // CreateAsset issues a new asset to the world state with given details.
-    async CreateAssetV2(ctx, id, base64Asset) {
+    async CreateAssetV2(ctx, id, ownerList, base64_asset) {
         const exists = await this.AssetExists(ctx, id);
         if (exists) {
             throw new Error(`The asset ${id} already exists`);
@@ -78,7 +78,8 @@ class AssetTransfer extends Contract {
 
         const asset = {
             ID: id,
-            asset: base64Asset
+            ownerList: ownerList,
+            base64_asset: base64_asset
         };
 
         //we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
@@ -119,18 +120,19 @@ class AssetTransfer extends Contract {
     }
 
 
-
     // UpdateAsset updates an existing asset in the world state with provided parameters.
-    async UpdateAssetV2(ctx, id, base64Asset) {
+    async UpdateAssetV2(ctx, id, newOwner, base64_asset) {
         const exists = await this.AssetExists(ctx, id);
         if (!exists) {
             throw new Error(`The asset ${id} does not exist`);
         }
 
         const updatedAsset = {
-            ID: id,
-            asset: base64Asset
-        };        
+            id: id,
+            owner: newOwner,
+            base64_asset: base64_asset            
+        };
+
 
         // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
         return ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedAsset))));

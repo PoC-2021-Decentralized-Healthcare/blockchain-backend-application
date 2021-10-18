@@ -7,14 +7,18 @@ let routes = (app) => {
   //router.post("/getHealthRecords", controller.getHealthRecords);
   router.post("/enrollUser", controller.enrolllUser);
 
-  router.get("/getAllAssets/:userId", controller.getAllAssets);
+  router.get("/getAllAssets", controller.getAllAssets);
   router.get("/getAsset/:assetId", controller.getAsset);
 
 
   router.post("/createAsset", controller.createAsset);
+  router.post("/shareAsset", controller.shareAsset);
+
+  //Not used
   router.post("/transferAsset", controller.transferAsset);
-  
-    app.use(router);
+
+  app.use(router);
+
 };
 
 module.exports = routes;
