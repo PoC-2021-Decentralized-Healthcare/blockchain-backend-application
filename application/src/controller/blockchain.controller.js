@@ -282,7 +282,7 @@ const shareAsset = async (req, res) => {
 
 
         console.log('\n--> Submit Transaction: UpdateAsset {id}, change the appraisedValue to 350');
-        await contract.submitTransaction('UpdateAssetV2', id, newOwner, resultObj.base64_asset);
+        await contract.submitTransaction('UpdateAssetV2', id, newOwner, resultObj.base64_record, resultObj.ofchain_id);
 
         //await contract.submitTransaction('UpdateAsset', 'asset1', 'blue', '5', 'Tomoko', '350');
 
@@ -358,14 +358,17 @@ const createAsset = async (req, res) => {
         }
         */
 
-        console.log(req.body.id, req.body.base64_asset)
+        let id = uuid.v4()
 
-        //var base64_asset = Buffer.from(JSON.stringify(asset)).toString("base64");
+        console.log(id, req.body.record)
+        
+        var base64_record = Buffer.from(JSON.stringify(req.body.record)).toString("base64");
         //var owner = 'Tomoko';
         //var assetObj = JSON.parse(Buffer.from(strAsset, 'base64').toString('ascii'))
 
-        let result = await contract.submitTransaction('CreateAssetV2', req.body.id, req.body.owner, req.body.base64_asset);
+        let result = await contract.submitTransaction('CreateAssetV2', id, req.body.owner, base64_record, req.body.ofchain_id);
         //let result = await contract.submitTransaction('CreateAsset', 'asset-' + uuid.v4(), 'yellow', '5', 'Tom', '1300');
+
         console.log('*** Result: committed');
         if (`${result}` !== '') {
             console.log(`*** Result: ${prettyJSONString(result.toString())}`);
