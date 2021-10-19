@@ -8,8 +8,8 @@ cd ~/fabric-samples/test-network;
 
 ./network.sh deployCC -ccn basic -ccp ../blockchain-backend-application/chaincode/ -ccl javascript;
 
-rm ~/fabric-samples/blockchain-backend-application/application/src/controller/wallet/*
+rm ~/fabric-samples/blockchain-backend-application/application/src/controller/wallet/*;
 
-cd ~/fabric-samples/blockchain-backend-application/application
+cd ~/fabric-samples/blockchain-backend-application/application;
 
-node server.js
+node server.js;
