@@ -7,9 +7,10 @@ var bodyParser = require("body-parser");
 
 let corsOptions = {
   origin: "http://localhost:8080",
+  origin: "http://localhost:4200",
 };
 
-app.use(cors(corsOptions), bodyParser.json());
+app.use(cors(), bodyParser.json());
 
 const initRoutes = require("./src/routes");
 

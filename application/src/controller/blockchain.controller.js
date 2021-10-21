@@ -21,6 +21,12 @@ const org2UserId = 'doctorUser';
 
 const gateway = new Gateway();
 
+const Base64 = require('crypto-js/enc-base64');
+const HmacSHA256 = require('crypto-js/hmac-sha256');
+const Utf8 = require('crypto-js/enc-utf8');
+
+const _secret = 'YOUR_VERY_CONFIDENTIAL_SECRET_FOR_SIGNING_JWT_TOKENS!!!';
+
 function prettyJSONString(inputString) {
     return JSON.stringify(JSON.parse(inputString), null, 2);
 }
@@ -32,9 +38,12 @@ const enrolllUser = async (req, res) => {
         // build an in memory object with the network configuration (also known as a connection profile)
         const ccp = buildCCPOrg1();
 
+        console.log(req.body)
         // build an instance of the fabric ca services client based on
         // the information in the network configuration
         const caClient = buildCAClient(FabricCAServices, ccp, 'ca.org1.example.com');
+
+        
 
         // setup the wallet to hold the credentials of the application user
         const wallet = await buildWallet(Wallets, walletPath);
@@ -48,8 +57,38 @@ const enrolllUser = async (req, res) => {
 
         await registerAndEnrollUser(caClient, wallet, mspOrg1, org2UserId, 'org1.department1');
 
+        let responce = {
+            "user": {
+                "id": "cfaad35d-07a3-4447-a6c3-d8c3d54fd5df",
+                "name": req.body.email,
+                "email": req.body.email,
+                "avatar": "assets/images/avatars/brian-hughes.jpg",
+                "status": "online"
+            },
+            "accessToken": _generateJWTToken(),
+            "tokenType": "bearer"
+        }
 
-        res.status(200).send("User registered and enrolled");
+        if(req.body.email == 'patient@blockchain.com') {
+            console.log('patient@blockchain.com')
+            responce["user"]["id"] =  "cfaad35d-07a3-4447-a6c3-d8c3d54fd5df"
+            responce["user"]["avatar"] =  "assets/images/avatars/brian-hughes.jpg",
+            responce["accessToken"] =  _generateJWTToken()
+        }
+        if(req.body.email == 'hospital@blockchain.com') {
+            console.log('hospital@blockchain.com')
+            responce["user"]["id"] =  "dfaad35d-07a3-4447-a6c3-d8c3d54fd5dg"
+            responce["user"]["avatar"] =  "assets/images/avatars/male-07.jpg",
+            responce["accessToken"] =  _generateJWTToken()
+        }
+        if(req.body.email == 'medicallab@blockchain.com') {
+            console.log('medicallab@blockchain.com')
+            responce["user"]["id"] =  "efaad35d-07a3-4447-a6c3-d8c3d54fd5dh"
+            responce["user"]["avatar"] =  "assets/images/avatars/female-11.jpg",
+            responce["accessToken"] =  _generateJWTToken()
+        }
+        
+        res.status(200).send(responce);
 
     } catch (err) {
 
@@ -391,6 +430,95 @@ const createAsset = async (req, res) => {
     }
 };
 
+
+    /**
+     * Return base64 encoded version of the given string
+     *
+     * @param source
+     * @private
+     */
+     function _base64url(source)
+     {
+         // Encode in classical base64
+         let encodedSource = Base64.stringify(source);
+ 
+         // Remove padding equal characters
+         encodedSource = encodedSource.replace(/=+$/, '');
+ 
+         // Replace characters according to base64url specifications
+         encodedSource = encodedSource.replace(/\+/g, '-');
+         encodedSource = encodedSource.replace(/\//g, '_');
+ 
+         // Return the base64 encoded string
+         return encodedSource;
+     }
+
+
+    /**
+     * Generates a JWT token using CryptoJS library.
+     *
+     * This generator is for mocking purposes only and it is NOT
+     * safe to use it in production frontend applications!
+     *
+     * @private
+     */
+     function _generateJWTToken()
+     {
+         // Define token header
+         const header = {
+             alg: 'HS256',
+             typ: 'JWT'
+         };
+ 
+         // Calculate the issued at and expiration dates
+         const date = new Date();
+         const iat = Math.floor(date.getTime() / 1000);
+         const exp = Math.floor((date.setDate(date.getDate() + 7)) / 1000);
+ 
+         // Define token payload
+         const payload = {
+             iat: iat,
+             iss: 'Fuse',
+             exp: exp
+         };
+ 
+         // Stringify and encode the header
+         const stringifiedHeader = Utf8.parse(JSON.stringify(header));
+         const encodedHeader = _base64url(stringifiedHeader);
+ 
+         // Stringify and encode the payload
+         const stringifiedPayload = Utf8.parse(JSON.stringify(payload));
+         const encodedPayload = _base64url(stringifiedPayload);
+ 
+         // Sign the encoded header and mock-api
+         let signature = encodedHeader + '.' + encodedPayload;
+         signature = HmacSHA256(signature, _secret);
+         signature = _base64url(signature);
+ 
+         // Build and return the token
+         return encodedHeader + '.' + encodedPayload + '.' + signature;
+     }
+ 
+     /**
+      * Verify the given token
+      *
+      * @param token
+      * @private
+      */
+     function _verifyJWTToken(token)
+     {
+         // Split the token into parts
+         const parts = token.split('.');
+         const header = parts[0];
+         const payload = parts[1];
+         const signature = parts[2];
+ 
+         // Re-sign and encode the header and payload using the secret
+         const signatureCheck = _base64url(HmacSHA256(header + '.' + payload, _secret));
+ 
+         // Verify that the resulting signature is valid
+         return (signature === signatureCheck);
+     }
 
 module.exports = {
     enrolllUser,
