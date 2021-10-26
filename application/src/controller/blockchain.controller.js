@@ -75,8 +75,8 @@ const enrolllUser = async (req, res) => {
             responce["user"]["avatar"] =  "assets/images/avatars/brian-hughes.jpg",
             responce["accessToken"] =  _generateJWTToken()
         }
-        if(req.body.email == 'hospital@blockchain.com') {
-            console.log('hospital@blockchain.com')
+        if(req.body.email == 'doctor@blockchain.com') {
+            console.log('doctor@blockchain.com')
             responce["user"]["id"] =  "dfaad35d-07a3-4447-a6c3-d8c3d54fd5dg"
             responce["user"]["avatar"] =  "assets/images/avatars/male-07.jpg",
             responce["accessToken"] =  _generateJWTToken()
