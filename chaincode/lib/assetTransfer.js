@@ -70,7 +70,7 @@ class AssetTransfer extends Contract {
     }
 
     // CreateAsset issues a new asset to the world state with given details.
-    async CreateAssetV2(ctx, id, owner, base64_record, ofchain_id) {
+    async CreateAssetV2(ctx, id, owner, shared, base64_record, ofchain_id) {
         const exists = await this.AssetExists(ctx, id);
         if (exists) {
             throw new Error(`The asset ${id} already exists`);
@@ -79,7 +79,8 @@ class AssetTransfer extends Contract {
         const asset = {
             id: id,
             owner: owner,
-            base64_record: base64_record,
+            shared: shared,
+            record: base64_record,
             ofchain_id: ofchain_id
         };
 
@@ -122,7 +123,7 @@ class AssetTransfer extends Contract {
 
 
     // UpdateAsset updates an existing asset in the world state with provided parameters.
-    async UpdateAssetV2(ctx, id, newOwner, base64_record, ofchain_id) {
+    async UpdateAssetV2(ctx, id, owner, shared, base64_record, ofchain_id) {
         const exists = await this.AssetExists(ctx, id);
         if (!exists) {
             throw new Error(`The asset ${id} does not exist`);
@@ -130,8 +131,9 @@ class AssetTransfer extends Contract {
 
         const updatedAsset = {
             id: id,
-            owner: newOwner,
-            base64_record: base64_record,
+            owner: owner,
+            shared: shared,
+            record: base64_record,
             ofchain_id: ofchain_id
         };
 

@@ -203,7 +203,34 @@ const getAllAssets = async (req, res) => {
         let result = await contract.evaluateTransaction('GetAllAssets');
         console.log(`*** Result: ${prettyJSONString(result.toString())}`);
 
-        res.status(200).send(prettyJSONString(result.toString()));
+
+
+        let resultStr = result.toString()
+
+        let resultObj = JSON.parse(resultStr)
+
+        let newResultStr = resultStr
+
+        for(var i = 0; i < resultObj.length; i++) {
+            var obj = resultObj[i];
+
+            console.log(obj);
+
+
+            let assetStr = Buffer.from(obj.record, 'base64').toString('ascii')
+
+            newResultStr = newResultStr.replace('"' + obj.record + '"', assetStr)
+            
+        }
+
+        
+
+        console.log(JSON.parse(newResultStr));
+
+        res.status(200).send(JSON.parse(newResultStr));
+
+
+        //res.status(200).send(prettyJSONString(result.toString()));
 
     } catch (err) {
 
@@ -253,9 +280,18 @@ const getAsset = async (req, res) => {
 
         console.log('\n--> Evaluate Transaction: ReadAsset, function returns "asset1" attributes');
         let result = await contract.evaluateTransaction('ReadAsset', req.params.assetId);
-        console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+        
+        let resultStr = result.toString()
 
-        res.status(200).send(prettyJSONString(result.toString()));
+        let resultObj = JSON.parse(resultStr)
+
+        let assetStr = Buffer.from(resultObj.record, 'base64').toString('ascii')
+
+        let newResultStr = resultStr.replace('"' + resultObj.record + '"', assetStr)
+
+        console.log(JSON.parse(newResultStr));
+
+        res.status(200).send(JSON.parse(newResultStr));
 
     } catch (err) {
 
@@ -310,7 +346,8 @@ const shareAsset = async (req, res) => {
         */
        
         let id = req.body.id
-        let newOwner = req.body.newOwner
+        let shared = req.body.shared
+        
 
 
         console.log('\n--> Get Asset: ', id);
@@ -321,7 +358,7 @@ const shareAsset = async (req, res) => {
 
 
         console.log('\n--> Submit Transaction: UpdateAsset {id}, change the appraisedValue to 350');
-        await contract.submitTransaction('UpdateAssetV2', id, newOwner, resultObj.base64_record, resultObj.ofchain_id);
+        await contract.submitTransaction('UpdateAssetV2', id, resultObj.owner, shared, resultObj.base64_record, resultObj.ofchain_id);
 
         //await contract.submitTransaction('UpdateAsset', 'asset1', 'blue', '5', 'Tomoko', '350');
 
@@ -402,11 +439,11 @@ const createAsset = async (req, res) => {
         console.log(id, req.body.record)
         
         var base64_record = Buffer.from(JSON.stringify(req.body.record)).toString("base64");
+        
         //var owner = 'Tomoko';
         //var assetObj = JSON.parse(Buffer.from(strAsset, 'base64').toString('ascii'))
 
-        let result = await contract.submitTransaction('CreateAssetV2', id, req.body.owner, base64_record, req.body.ofchain_id);
-        //let result = await contract.submitTransaction('CreateAsset', 'asset-' + uuid.v4(), 'yellow', '5', 'Tom', '1300');
+        let result = await contract.submitTransaction('CreateAssetV2', id, req.body.owner, '', base64_record, req.body.ofchain_id);
 
         console.log('*** Result: committed');
         if (`${result}` !== '') {
