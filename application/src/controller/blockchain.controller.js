@@ -358,7 +358,7 @@ const shareAsset = async (req, res) => {
 
 
         console.log('\n--> Submit Transaction: UpdateAsset {id}, change the appraisedValue to 350');
-        await contract.submitTransaction('UpdateAssetV2', id, resultObj.owner, shared, resultObj.base64_record, resultObj.ofchain_id);
+        await contract.submitTransaction('UpdateAssetV2', id, resultObj.owner, shared, resultObj.record, resultObj.ofchain_id);
 
         //await contract.submitTransaction('UpdateAsset', 'asset1', 'blue', '5', 'Tomoko', '350');
 
@@ -366,6 +366,89 @@ const shareAsset = async (req, res) => {
 
         console.log('\n--> Evaluate Transaction: ReadAsset, function returns "asset1" attributes');
         result = await contract.evaluateTransaction('ReadAsset', id);
+        console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+        res.status(200).send(prettyJSONString(result.toString()));
+
+    } catch (err) {
+
+        console.log(err);
+
+        res.status(500).send({
+            message: "Unable to shareAsset!",
+        });
+
+    } finally {
+        // Disconnect from the gateway when the application is closing
+        // This will close all connections to the network
+        gateway.disconnect();
+    }
+};
+
+
+const shareAllAssets = async (req, res) => {
+
+    // build an in memory object with the network configuration (also known as a connection profile)
+    const ccp = buildCCPOrg1();
+
+
+    // setup the wallet to hold the credentials of the application user
+    const wallet = await buildWallet(Wallets, walletPath);
+
+    try {
+        // setup the gateway instance
+        // The user will now be able to create connections to the fabric network and be able to
+        // submit transactions and query. All transactions submitted by this gateway will be
+        // signed by this user using the credentials stored in the wallet.
+        await gateway.connect(ccp, {
+            wallet,
+            identity: org1UserId,
+            discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
+        });
+
+        // Build a network instance based on the channel where the smart contract is deployed
+        const network = await gateway.getNetwork(channelName);
+
+        // Get the contract from the network.
+        const contract = network.getContract(chaincodeName);
+
+        /*
+        const asset = {
+            ID: 'asset1',
+            Color: 'blue',
+            Size: 5,
+            Owner: 'Tomoko',
+            AppraisedValue: 350,
+        }
+        */
+       
+        let shared = req.body.shared
+
+        console.log('\nGetAllAssets, function returns all the current assets on the ledger');
+        let result = await contract.evaluateTransaction('GetAllAssets');
+        
+
+        let resultStr = result.toString()
+
+        let resultObjAll = JSON.parse(resultStr)
+
+        for(var i = 0; i < resultObjAll.length; i++) {
+            var resultObj = resultObjAll[i];
+
+            console.log(resultObj)
+
+            let id = resultObj.id;
+
+            console.log(id)
+
+            console.log('\n--> Submit Transaction: UpdateAsset {id}, change the shared attribute');
+            await contract.submitTransaction('UpdateAssetV2', id, resultObj.owner, shared, resultObj.record, resultObj.ofchain_id);            
+        }
+
+        console.log('*** Result: committed');
+
+        console.log('\n--> Evaluate Transaction: ReadAsset, function returns "asset1" attributes');
+        result = await contract.evaluateTransaction('GetAllAssets');
         console.log(`*** Result: ${prettyJSONString(result.toString())}`);
 
         res.status(200).send(prettyJSONString(result.toString()));
@@ -563,5 +646,6 @@ module.exports = {
     getAsset,
     createAsset,
     transferAsset,
-    shareAsset
+    shareAsset,
+    shareAllAssets
 };
