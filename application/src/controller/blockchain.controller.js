@@ -169,6 +169,79 @@ const transferAsset = async (req, res) => {
 
 
 
+
+
+const deleteAllAssets = async (req, res) => {
+
+    // build an in memory object with the network configuration (also known as a connection profile)
+    const ccp = buildCCPOrg1();
+
+
+    // setup the wallet to hold the credentials of the application user
+    const wallet = await buildWallet(Wallets, walletPath);
+
+    try {
+        // setup the gateway instance
+        // The user will now be able to create connections to the fabric network and be able to
+        // submit transactions and query. All transactions submitted by this gateway will be
+        // signed by this user using the credentials stored in the wallet.
+        await gateway.connect(ccp, {
+            wallet,
+            identity: org1UserId,
+            discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
+        });
+
+        // Build a network instance based on the channel where the smart contract is deployed
+        const network = await gateway.getNetwork(channelName);
+
+        // Get the contract from the network.
+        const contract = network.getContract(chaincodeName);
+
+        console.log('\nGetAllAssets, function returns all the current assets on the ledger');
+        let result = await contract.evaluateTransaction('GetAllAssets');
+        
+
+        let resultStr = result.toString()
+
+        let resultObjAll = JSON.parse(resultStr)
+
+        for(var i = 0; i < resultObjAll.length; i++) {
+            var resultObj = resultObjAll[i];
+
+            console.log(resultObj)
+
+            let id = resultObj.id;
+
+            console.log('\n--> Submit Transaction: DeleteAsset {id}, change the shared attribute');
+            await contract.submitTransaction('DeleteAsset', id);
+        }
+
+        console.log('*** Result: committed');
+
+        console.log('\n--> Evaluate Transaction: ReadAsset, function returns "asset1" attributes');
+        result = await contract.evaluateTransaction('GetAllAssets');
+        console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+        res.status(200).send(prettyJSONString(result.toString()));
+
+    } catch (err) {
+
+        console.log(err);
+
+        res.status(500).send({
+            message: "Unable to shareAsset!",
+        });
+
+    } finally {
+        // Disconnect from the gateway when the application is closing
+        // This will close all connections to the network
+        gateway.disconnect();
+    }
+};
+
+
+
+
 const getAllAssets = async (req, res) => {
 
 
@@ -201,21 +274,37 @@ const getAllAssets = async (req, res) => {
         // This will be sent to just one peer and the results will be shown.
         console.log('\n--> Evaluate Transaction: GetAllAssets, function returns all the current assets on the ledger');
         let result = await contract.evaluateTransaction('GetAllAssets');
-        console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-
+        //console.log(`*** Result: ${prettyJSONString(result.toString())}`);
 
         let resultStr = result.toString()
 
         let resultObj = JSON.parse(resultStr)
+
+        let userID = req.query.user
+
+        console.log(userID)
+
+        let userResult = new Array();
+        for(var i = 0; i < resultObj.length; i++) {
+            var obj = resultObj[i];
+            if(userID == obj.owner || userID == obj.shared) {
+                userResult.push(obj)
+            }
+        }
+
+        console.log(userResult);
+
+        resultStr = JSON.stringify(userResult)
+
+        resultObj = JSON.parse(resultStr)
+
 
         let newResultStr = resultStr
 
         for(var i = 0; i < resultObj.length; i++) {
             var obj = resultObj[i];
 
-            console.log(obj);
-
+            //console.log(obj);
 
             let assetStr = Buffer.from(obj.record, 'base64').toString('ascii')
 
@@ -647,5 +736,6 @@ module.exports = {
     createAsset,
     transferAsset,
     shareAsset,
-    shareAllAssets
+    shareAllAssets,
+    deleteAllAssets
 };
