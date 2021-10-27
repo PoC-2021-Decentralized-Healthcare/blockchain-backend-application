@@ -15,6 +15,7 @@ let routes = (app) => {
   router.post("/shareAsset", controller.shareAsset);
   router.post("/shareAllAssets", controller.shareAllAssets);
   router.post("/deleteAllAssets", controller.deleteAllAssets);
+  router.post("/loadAssets", controller.loadAssets);
   
   //Not used
   router.post("/transferAsset", controller.transferAsset);

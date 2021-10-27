@@ -557,6 +557,76 @@ const shareAllAssets = async (req, res) => {
     }
 };
 
+const loadAssets = async (req, res) => {
+
+    // build an in memory object with the network configuration (also known as a connection profile)
+    const ccp = buildCCPOrg1();
+
+    // setup the wallet to hold the credentials of the application user
+    const wallet = await buildWallet(Wallets, walletPath);
+
+    try {
+        // setup the gateway instance
+        // The user will now be able to create connections to the fabric network and be able to
+        // submit transactions and query. All transactions submitted by this gateway will be
+        // signed by this user using the credentials stored in the wallet.
+        await gateway.connect(ccp, {
+            wallet,
+            identity: org1UserId,
+            discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
+        });
+
+        // Build a network instance based on the channel where the smart contract is deployed
+        const network = await gateway.getNetwork(channelName);
+
+        // Get the contract from the network.
+        const contract = network.getContract(chaincodeName);
+
+        var uuid = require('uuid');
+
+        let assetsArray = req.body
+        let result = ''
+
+        for(let i = 0; i < assetsArray.length; i++){
+
+            // Now let's try to submit a transaction.
+            // This will be sent to both peers and if both peers endorse the transaction, the endorsed proposal will be sent
+            // to the orderer to be committed by each of the peer's to the channel ledger.
+            console.log('\n--> Submit Transaction: CreateAsset');
+
+            let id = uuid.v4()
+
+            console.log(id, assetsArray[i].record)
+            
+            var base64_record = Buffer.from(JSON.stringify(assetsArray[i].record)).toString("base64");
+            
+            result = await contract.submitTransaction('CreateAssetV2', id, assetsArray[i].owner, '', base64_record, assetsArray[i].ofchain_id);
+
+        } 
+
+        console.log('*** Result: committed');
+        if (`${result}` !== '') {
+            console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+        }
+
+        res.status(200).send(prettyJSONString(result.toString()));
+
+    } catch (err) {
+
+        console.log(err);
+
+        res.status(500).send({
+            message: "Unable to create Asset!",
+        });
+
+    } finally {
+        // Disconnect from the gateway when the application is closing
+        // This will close all connections to the network
+        gateway.disconnect();
+    }
+};
+
+
 
 const createAsset = async (req, res) => {
 
@@ -737,5 +807,6 @@ module.exports = {
     transferAsset,
     shareAsset,
     shareAllAssets,
-    deleteAllAssets
+    deleteAllAssets,
+    loadAssets
 };
